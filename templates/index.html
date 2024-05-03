@@ -1,0 +1,61 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<title>Chatbot Interface</title>  
+<!-- Add any additional styles or scripts you need -->  
+</head>  
+<body>  
+<div id="chat-container">  
+    <div id="chat-window">  
+        <!-- Messages will be displayed here -->  
+    </div>  
+    <input type="text" id="chat-input" placeholder="Type your message here...">  
+    <button onclick="sendMessage()">Send</button>  
+</div>  
+  
+<button onclick="createThread()">Create New Thread</button>  
+
+<script>  
+function sendMessage() {  
+    const input = document.getElementById('chat-input');  
+    const message = input.value;  
+    input.value = ''; // Clear the input after sending  
+  
+    // Display the user's message  
+    const chatWindow = document.getElementById('chat-window');  
+    chatWindow.innerHTML += `<div>User: ${message}</div>`;  
+  
+    // Send the message to the backend  
+    fetch('/message', {  
+        method: 'POST',  
+        headers: {  
+            'Content-Type': 'application/json',  
+        },  
+        body: JSON.stringify({ message: message }),  
+    })  
+    .then(response => response.json())  
+    .then(data => {  
+        // Display the bot's response  
+        chatWindow.innerHTML += `<div>${data.response}</div>`;  
+        // Scroll to the bottom of the chat window  
+        chatWindow.scrollTop = chatWindow.scrollHeight;  
+    })  
+    .catch(error => console.error('Error:', error));  
+} 
+
+function createThread() {  
+    fetch('/create_thread', {  
+        method: 'POST',  
+    })  
+    .then(response => response.json())  
+    .then(data => {  
+        if(data.thread_id) {  
+            alert('New thread created successfully.');  
+        }  
+    })  
+    .catch(error => console.error('Error:', error));  
+}  
+</script>  
+</body>  
+</html>  
