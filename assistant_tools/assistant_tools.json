@@ -1,0 +1,31 @@
+{  
+  "tools": [  
+    {  
+      "type": "function",  
+      "function": {  
+        "name": "search_etfs",  
+        "description": "Retrieve detailed information about Exchange-Traded Funds (ETFs) based on a search query. Allows specifying the number of entries to return (default is 10 if not specified) and sorting options for results. Sorting can be specified for 'fundVolume' or 'totalExpenseRatio' in either ascending ('asc') or descending ('desc') order.",  
+        "parameters": {  
+          "type": "object",  
+          "properties": {  
+            "query": {  
+              "type": "string",  
+              "description": "The search query used to find ETFs, which can include the ETF's name, ticker symbol, or ISIN."  
+            },  
+            "entries": {  
+              "type": "integer",  
+              "description": "The number of entries to return. Defaults to 10 if not specified."  
+            },  
+            "sort": {  
+              "type": "string",  
+              "description": "Sorting criteria and order for the results. Specify sorting for 'fundVolume' (the total trading volume of the ETF) or 'totalExpenseRatio' (the annual total of all expenses charged to the ETF, expressed as a percentage of the fund’s total assets). Formats include '{\"fundVolume\": \"desc\"}', '{\"fundVolume\": \"asc\"}', '{\"totalExpenseRatio\": \"asc\"}', and '{\"totalExpenseRatio\": \"desc\"}'."  
+            }  
+          },  
+          "required": [  
+            "query"  
+          ]  
+        }  
+      }  
+    }  
+  ]  
+}  

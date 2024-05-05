@@ -87,6 +87,7 @@ ol, ul {
     border-radius: 20px;  
     display: inline-block;  
     max-width: 70%;  
+    white-space: pre-wrap;
 }  
   
 .message-time {  

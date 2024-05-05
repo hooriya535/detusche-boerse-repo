@@ -30,35 +30,13 @@ class Assistant:
             api_version=self.api_version,  
             azure_endpoint=self.azure_endpoint  
         )  
-  
+
         # Create an assistant  
-        self.system_prompt = """
-        You are a financial AI assistant specialized in handling queries related to securities like stocks, ETFs, and bonds. Your role is to interpret and extract key identifiers such as names, ISINs (International Securities Identification Number), or WKNs (Wertpapierkennnummer) from user queries.
-        - If a query does not include a clear identifier for a security, you should attempt to infer the necessary information using relevant context from the query. If you are unable to confidently extract or infer the required identifier, prompt the user to provide this information explicitly.
-        - Once an identifier is extracted, utilize the `search_etfs` function to retrieve detailed information about Exchange-Traded Funds (ETFs) based on the extracted identifier, which can be the ETF's name, ticker symbol, or ISIN.
-        - Clearly inform the user when you are making an inference about the identifier to ensure transparency.
-        - Your responses should be strictly based on the information retrieved from the `search_etfs` function. If no relevant information is found or the query cannot be answered with the available data, respond with "I don't know." Do not fabricate or guess answers.
-        """ 
-        
-        self.tools = [  
-            {  
-                "type": "function",  
-                "function": {  
-                    "name": "search_etfs",  
-                    "description": "Retrieve detailed information about Exchange-Traded Funds (ETFs) based on a search query.",  
-                    "parameters": {  
-                        "type": "object",  
-                        "properties": {  
-                            "query": {  
-                                "type": "string",  
-                                "description": "The search query used to find ETFs, which can include the ETF's name, ticker symbol, or ISIN."  
-                            }  
-                        },  
-                        "required": ["query"]  
-                    }  
-                }  
-            }  
-        ] 
+        with open("assistant_tools/system_prompt.txt",'r') as system_prompt_file:
+            self.system_prompt = system_prompt_file.read()
+
+        with open("assistant_tools/assistant_tools.json",'r') as assistant_tools_file:
+            self.tools = json.load(assistant_tools_file)["tools"]
   
         self.assistant = self.client.beta.assistants.create(  
             instructions=self.system_prompt,  
@@ -89,7 +67,7 @@ class Assistant:
   
             try:  
                 if func_name == "search_etfs":  
-                    output = search_etfs(arguments["query"])  
+                    output = search_etfs(arguments["query"],arguments.get("entries",10),arguments.get("sort",'{"shareClassVolume": "desc"}'))  
                     tool_outputs.append({"tool_call_id": action["id"], "output": output})  
                     logger.info(f"Function {func_name} called with arguments {arguments}. Output: {output}")  
                 else:  

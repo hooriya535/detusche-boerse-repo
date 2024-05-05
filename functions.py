@@ -4,13 +4,20 @@ import logging
   
 logger = logging.getLogger(__name__)
   
-def search_etfs(query=''):  
-    logger.info(f"Searching ETFs with query: '{query}'")  
-    # Set default values for other parameters inside the function  
-    per = 25  
+def search_etfs(query='', entries=10, sort='{"shareClassVolume": "desc"}'):  
+    logger.info(f"Searching ETFs with query: '{query}', entries: {entries}, sort: {sort}")  
+  
+    # Parse the sort parameter from JSON string to dictionary  
+    try:  
+        sort = json.loads(sort)  
+        logger.info(f"Parsed sort parameter: {sort}")  
+    except json.JSONDecodeError as e:  
+        logger.error(f"Error parsing sort parameter: {e}")  
+        sort = {"shareClassVolume": "desc"}  
+        logger.info("Using default sort parameter.")  
+    
     page = 1  
     filter = {}  
-    sort = {'shareClassVolume': 'desc'}  
       
     url = 'https://search.finanzfluss.de/graphql'  
     graphql_query = """  
@@ -54,7 +61,7 @@ def search_etfs(query=''):
       
     variables = {  
         'query': query,  
-        'per': per,  
+        'per': entries,  
         'page': page,  
         'filter': filter,  
         'sort': sort  
