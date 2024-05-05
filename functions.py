@@ -1,7 +1,11 @@
 import requests  
 import json  
+import logging  
+  
+logger = logging.getLogger(__name__)
   
 def search_etfs(query=''):  
+    logger.info(f"Searching ETFs with query: '{query}'")  
     # Set default values for other parameters inside the function  
     per = 25  
     page = 1  
@@ -60,24 +64,30 @@ def search_etfs(query=''):
         'Content-Type': 'application/json; charset=utf-8'  
     }  
       
-    response = requests.post(url, headers=headers, json={  
-        'operationName': 'InformerSearchQuery',  
-        'query': graphql_query,  
-        'variables': variables  
-    })  
-      
-    if response.status_code == 200:  
-        data = response.json()  
-        search_data = data['data']['search']  
-          
-        search_results = {  
-            'aggregations': search_data.get('aggregations', {}),  
-            'total': search_data.get('total', 0),  
-            'pages': search_data.get('pages', 0),  
-            'currentPage': search_data.get('currentPage', 0),  
-            'currentPer': search_data.get('currentPer', 0),  
-            'results': [result for result in search_data.get('results', [])]  
-        }  
-        return json.dumps(search_results, indent=4)  
-    else:  
-        response.raise_for_status()  
+    try:  
+        response = requests.post(url, headers=headers, json={  
+            'operationName': 'InformerSearchQuery',  
+            'query': graphql_query,  
+            'variables': variables  
+        })  
+  
+        if response.status_code == 200:  
+            data = response.json()  
+            search_data = data['data']['search']  
+  
+            search_results = {  
+                'aggregations': search_data.get('aggregations', {}),  
+                'total': search_data.get('total', 0),  
+                'pages': search_data.get('pages', 0),  
+                'currentPage': search_data.get('currentPage', 0),  
+                'currentPer': search_data.get('currentPer', 0),  
+                'results': [result for result in search_data.get('results', [])]  
+            }  
+            logger.info(f"ETF search successful. Total results found: {search_data.get('total', 0)}")  
+            return json.dumps(search_results, indent=4)  
+        else:  
+            logger.error(f"ETF search failed with status code: {response.status_code}")  
+            response.raise_for_status()  
+    except requests.RequestException as e:  
+        logger.exception(f"An error occurred during ETF search: {e}", exc_info=True)  
+        raise 

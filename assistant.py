@@ -2,8 +2,12 @@ import os
 import time
 from openai import AzureOpenAI  
 from dotenv import load_dotenv
-from functions import *   
-  
+from functions import *  
+import logging 
+
+
+logger = logging.getLogger(__name__)
+ 
 # Load the .env file  
 load_dotenv()  
   
@@ -61,30 +65,47 @@ class Assistant:
             model=self.model_name, 
             tools=self.tools  
         )  
+        
+        logger.info("Assistant class initialized.") 
     
     def create_thread(self):  
-        # Create a thread and return the thread ID  
-        thread = self.client.beta.threads.create()  
-        return thread.id 
+        try:  
+            thread = self.client.beta.threads.create()  
+            logger.info(f"Assistant is Creating Thread with ID: {thread.id}")  
+            return thread.id  
+        except Exception as e:  
+            logger.error(f"Assitant Failed to create thread: {e}")  
+            raise
     
-    def call_functions(self, run) -> None:  
-        print("Function Calling")  
+    def call_functions(self, run):  
+        logger.info("Function Calling")  
         required_actions = run.required_action.submit_tool_outputs.model_dump()  
-        print(required_actions)  
+        logger.info(f"Required actions: {required_actions}")  
         tool_outputs = []  
-
+  
         for action in required_actions["tool_calls"]:  
             func_name = action["function"]["name"]  
             arguments = json.loads(action["function"]["arguments"])  
-
-            if func_name == "search_etfs":  
-                output = search_etfs(arguments["query"])  
-                tool_outputs.append({"tool_call_id": action["id"], "output": output})  
-            else:  
-                raise ValueError(f"Unknown function: {func_name}")  
-
-        print("Submitting outputs back to the Assistant...")  
-        self.client.beta.threads.runs.submit_tool_outputs(thread_id=run.thread_id, run_id=run.id, tool_outputs=tool_outputs) 
+  
+            try:  
+                if func_name == "search_etfs":  
+                    output = search_etfs(arguments["query"])  
+                    tool_outputs.append({"tool_call_id": action["id"], "output": output})  
+                    logger.info(f"Function {func_name} called with arguments {arguments}. Output: {output}")  
+                else:  
+                    logger.error(f"Unknown function: {func_name}")  
+                    raise ValueError(f"Unknown function: {func_name}")  
+            except Exception as e:  
+                logger.exception(f"Error calling function {func_name} with arguments {arguments}: {e}", exc_info=True)  
+                raise  
+  
+        logger.info("Submitting outputs back to the Assistant...")  
+        self.client.beta.threads.runs.submit_tool_outputs(  
+            thread_id=run.thread_id,  
+            run_id=run.id,  
+            tool_outputs=tool_outputs  
+        )  
+        logger.info("Outputs submitted successfully.") 
   
     
     def format_messages(self, messages) -> str:          
@@ -103,30 +124,40 @@ class Assistant:
     
         return last_assistant_message.strip()  # Return only the last assistant message  
     
-    def process_message(self, thread_id, content: str) -> None:  
-        # Add a user question to the thread  
-        self.client.beta.threads.messages.create(  
-            thread_id= thread_id, 
-            role="user",  
-            content=content  # Replace this with your prompt  
-        )  
+    def process_message(self, thread_id, content: str):  
+        logger.info(f"Received message for processing: '{content}' in thread ID: {thread_id}")  
+        try:  
+            # Add a user question to the thread  
+            self.client.beta.threads.messages.create(  
+                thread_id=thread_id,  
+                role="user",  
+                content=content 
+            )  
   
-        run = self.client.beta.threads.runs.create(  
-            thread_id= thread_id, 
-            assistant_id=self.assistant.id,  
-        )  
+            # Start the processing run  
+            run = self.client.beta.threads.runs.create(  
+                thread_id=thread_id,  
+                assistant_id=self.assistant.id,  
+            )  
   
-        print("Processing...")  
-        while True:  
-            time.sleep(1)  
-            run = self.client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)  
-            if run.status == "completed":  
-                messages = self.client.beta.threads.messages.list(thread_id=thread_id)  
-                return self.format_messages(messages)  
-            if run.status in ["failed", "expired", "cancelled"]:  
-                # Handle failed, expired, and cancelled statuses  
-                break  
-            if run.status == "requires_action":  
-                self.call_functions(run)  
-            else:  
-                time.sleep(5)  
+            logger.info("Processing...")  
+            while True:  
+                time.sleep(1)  # Avoid busy-waiting  
+                run = self.client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)  
+                if run.status == "completed":  
+                    messages = self.client.beta.threads.messages.list(thread_id=thread_id)  
+                    response = self.format_messages(messages)  
+                    logger.info(f"Completed processing message for thread ID: {thread_id}. Response: {response}")  
+                    return response  
+                elif run.status in ["failed", "expired", "cancelled"]:  
+                    logger.error(f"Run status {run.status} for thread ID: {thread_id}.")  
+                    return f"Run failed with status: {run.status}"  
+                elif run.status == "requires_action":  
+                    logger.info("Run requires action. Calling functions.")  
+                    self.call_functions(run)  
+                else:  
+                    logger.debug(f"Run status {run.status} for thread ID: {thread_id}. Waiting for completion...")  
+                    time.sleep(5)  # Wait before checking the status again  
+        except Exception as e:  
+            logger.exception(f"An error occurred while processing message for thread ID: {thread_id}: {e}", exc_info=True)  
+            raise  
