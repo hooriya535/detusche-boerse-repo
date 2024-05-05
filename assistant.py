@@ -119,8 +119,8 @@ class Assistant:
         for message in reversed(messages_list):  
             if message.role == "assistant":  
                 # Construct the message string for the assistant's message  
-                message_content = " ".join(item.text.value for item in message.content)  
-                last_assistant_message = f"Assistant: {message_content}\n"  
+                last_assistant_message = " ".join(item.text.value for item in message.content).join(" \n") 
+                #last_assistant_message = f"{message_content}\n"  
     
         return last_assistant_message.strip()  # Return only the last assistant message  
     

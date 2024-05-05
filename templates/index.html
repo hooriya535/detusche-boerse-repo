@@ -1,61 +1,30 @@
 <!DOCTYPE html>  
 <html lang="en">  
 <head>  
-<meta charset="UTF-8">  
-<title>Chatbot Interface</title>  
-<!-- Add any additional styles or scripts you need -->  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Chatbot Interface</title>  
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">  
 </head>  
 <body>  
-<div id="chat-container">  
-    <div id="chat-window">  
-        <!-- Messages will be displayed here -->  
+    <div class="chat-container">  
+        <header class="chat-header">  
+            <h1>Chatbot</h1>  
+            <!-- Add more header content if needed -->  
+        </header>  
+        <div id="chat-window" class="chat-window">  
+            <!-- Messages will be displayed here -->  
+        </div>  
+        <div id="typing-indicator" class="typing-indicator" style="display: none;">  
+            Bot is typing...  
+        </div>  
+        <div class="chat-input-container">  
+            <input type="text" id="chat-input" placeholder="Type your message here...">  
+            <button id="send-button" onclick="sendMessage()" disabled>Send</button> 
+        </div>  
     </div>  
-    <input type="text" id="chat-input" placeholder="Type your message here...">  
-    <button onclick="sendMessage()">Send</button>  
-</div>  
-  
-<button onclick="createThread()">Create New Thread</button>  
-
-<script>  
-function sendMessage() {  
-    const input = document.getElementById('chat-input');  
-    const message = input.value;  
-    input.value = ''; // Clear the input after sending  
-  
-    // Display the user's message  
-    const chatWindow = document.getElementById('chat-window');  
-    chatWindow.innerHTML += `<div>User: ${message}</div>`;  
-  
-    // Send the message to the backend  
-    fetch('/message', {  
-        method: 'POST',  
-        headers: {  
-            'Content-Type': 'application/json',  
-        },  
-        body: JSON.stringify({ message: message }),  
-    })  
-    .then(response => response.json())  
-    .then(data => {  
-        // Display the bot's response  
-        chatWindow.innerHTML += `<div>${data.response}</div>`;  
-        // Scroll to the bottom of the chat window  
-        chatWindow.scrollTop = chatWindow.scrollHeight;  
-    })  
-    .catch(error => console.error('Error:', error));  
-} 
-
-function createThread() {  
-    fetch('/create_thread', {  
-        method: 'POST',  
-    })  
-    .then(response => response.json())  
-    .then(data => {  
-        if(data.thread_id) {  
-            alert('New thread created successfully.');  
-        }  
-    })  
-    .catch(error => console.error('Error:', error));  
-}  
-</script>  
+    <button class="create-thread-btn" onclick="createThread()">Create New Thread</button>  
+    <div id="thread-status-message" class="thread-status-message"></div>  
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>    
 </body>  
 </html>  
