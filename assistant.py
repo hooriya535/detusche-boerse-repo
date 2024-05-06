@@ -4,7 +4,7 @@ from openai import AzureOpenAI
 from dotenv import load_dotenv
 from functions import *  
 import logging 
-
+from flask import current_app  
 
 logger = logging.getLogger(__name__)
  
@@ -84,24 +84,51 @@ class Assistant:
             tool_outputs=tool_outputs  
         )  
         logger.info("Outputs submitted successfully.") 
-  
     
-    def format_messages(self, messages) -> str:          
-        last_assistant_message = ""  # To store the last assistant message  
-        messages_list = []
+    def format_messages(self, messages) -> list:  
+        formatted_messages = []  
+        found_last_user_message = False  
+    
+        # Convert messages cursor to a list and reverse it  
+        messages_list = list(messages)  
+        messages_list.reverse()  
+       # print("******")
+        #print(messages_list)
+    
+        for message in messages:  
+            if message.role == "user":  
+                 return formatted_messages[::-1] 
+            # If we've found the last user message, start formatting the assistant messages  
+            for content_item in message.content:  
+                if content_item.type == "text":  
+                    formatted_messages.append({  
+                        'type': 'text',  
+                        'content': content_item.text.value  
+                    })  
+                elif content_item.type == "image_file":  
+                    # Ensure the assistant_outputs directory exists  
+                    output_dir = './assistant_outputs'  
+                    os.makedirs(output_dir, exist_ok=True)  
+                    
+                    # Process and save the image file  
+                    image_file_id = content_item.image_file.file_id  
+                    image_data = self.client.files.content(image_file_id)  
+                    image_data_bytes = image_data.read()  
+                    image_path = os.path.join(output_dir, f"image_{image_file_id}.png")  
+                    with open(image_path, "wb") as file:  
+                        file.write(image_data_bytes)  
+                        print(f"Image {image_file_id} saved as {image_path}")  
+                    base_url = current_app.config['BASE_URL'] 
+                    image_url = f"{base_url}/assistant_outputs/image_{image_file_id}.png"  
+                    formatted_messages.append({  
+                        'type': 'image',  
+                        'content': image_url  
+                    })  
+    # Since we iterated in reverse, we need to reverse the formatted_messages list  
+    # to maintain the chronological order for rendering.  
+        return formatted_messages[::-1]  
 
-        for message in messages:
-            messages_list.append(message)
         
-        # Loop through all messages  
-        for message in reversed(messages_list):  
-            if message.role == "assistant":  
-                # Construct the message string for the assistant's message  
-                last_assistant_message = " ".join(item.text.value for item in message.content).join(" \n") 
-                #last_assistant_message = f"{message_content}\n"  
-    
-        return last_assistant_message.strip()  # Return only the last assistant message  
-    
     def process_message(self, thread_id, content: str):  
         logger.info(f"Received message for processing: '{content}' in thread ID: {thread_id}")  
         try:  

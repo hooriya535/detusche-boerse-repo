@@ -1,14 +1,16 @@
-from flask import Flask, request, jsonify, render_template, session  
+from flask import Flask, request, jsonify, render_template, session ,send_from_directory  
 from assistant import Assistant  
 import logging
 import sys
+import os 
 
 # Configure logging to output to the console and set the level to DEBUG  
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
   
 app = Flask(__name__)  
 app.secret_key = 'khalil_secret'
-  
+app.config['BASE_URL'] = os.environ.get('SERVER_URL', 'http://localhost:5000') 
+
 # Instantiate the Assistant class  
 assistant = Assistant()  
   
@@ -43,7 +45,11 @@ def message():
     except Exception as e:  
         logging.error(f'Error processing message for thread_id {thread_id}: {e}')  
         return jsonify({'error': str(e)}), 500  
-  
+
+@app.route('/assistant_outputs/<filename>')  
+def uploaded_file(filename):  
+    return send_from_directory('assistant_outputs', filename)  
+
 if __name__ == '__main__':  
     logging.info('Starting the application...')  
     app.run(debug=True)  

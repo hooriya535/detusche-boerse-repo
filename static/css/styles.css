@@ -161,6 +161,13 @@ button:enabled:hover {
     margin-top: 10px;  
     text-align: center;  
     display: none; /* hide by default */  
-}  
+} 
+
+.message-image {  
+    max-width: 100%; /* Make sure images do not overflow the chat window */  
+    height: auto;  
+    border-radius: 4px; /* Optional, for rounded corners */  
+    margin: 5px 0; /* Add some spacing around the image */  
+} 
   
 /* Additional styles if needed */  

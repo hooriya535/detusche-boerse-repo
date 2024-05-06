@@ -31,13 +31,30 @@ function sendMessage() {
     .then(data => {  
         // Hide typing indicator  
         document.getElementById('typing-indicator').style.display = 'none';  
-  
-        // Append bot's response  
-        chatWindow.innerHTML += `<div class="chat-message bot-message"><span class="message-content">${data.response}</span><span class="message-time">${new Date().toLocaleTimeString()}</span></div>`;  
-  
+      
+        // Create a container for the assistant's messages  
+        let assistantMessageContainer = `<div class="chat-message bot-message">`;  
+      
+        // Iterate through each message item and add to the container  
+        data.response.forEach(messageItem => {  
+            if (messageItem.type === 'text') {  
+                // Add text content to the container  
+                assistantMessageContainer += `<span class="message-content">${messageItem.content}</span>`;  
+            } else if (messageItem.type === 'image') {  
+                // Add image content to the container  
+                assistantMessageContainer += `<img src="${messageItem.content}" class="message-image" />`;  
+            }  
+        });  
+      
+        // Close the container and add the message time  
+        assistantMessageContainer += `<span class="message-time">${new Date().toLocaleTimeString()}</span></div>`;  
+      
+        // Append the entire assistant message container to the chat window  
+        chatWindow.innerHTML += assistantMessageContainer;  
+      
         // Scroll to the bottom of the chat window  
         chatWindow.scrollTop = chatWindow.scrollHeight;  
-    })  
+    })     
     .catch(error => {  
         console.error('Error:', error);  
         // Hide typing indicator in case of error as well  
